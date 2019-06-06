@@ -3165,6 +3165,7 @@ static void write_crash_readme(void) {
    entry is saved, 0 otherwise. */
 
 static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
+/* [analysis] 该函数用于保存crash和hang */
 
   u8  *fn = "";
   u8  hnb;
@@ -3239,6 +3240,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
         simplify_trace((u32*)trace_bits);
 #endif /* ^__x86_64__ */
 
+        /* [analysis] 是否有新路径来决定是否unique */
         if (!has_new_bits(virgin_tmout)) return keeping;
 
       }
@@ -3253,6 +3255,7 @@ static u8 save_if_interesting(char** argv, void* mem, u32 len, u8 fault) {
 
         u8 new_fault;
         write_to_testcase(mem, len);
+        /* [analysis] 使用hang_tmout来重新执行程序以判断是否为hang */
         new_fault = run_target(argv, hang_tmout);
 
         /* A corner case that one user reported bumping into: increasing the
@@ -3291,6 +3294,7 @@ keep_as_crash:
          except for slightly different limits and no need to re-run test
          cases. */
 
+      /* [analysis] crash同理，只不过不用再重新执行程序了 */
       total_crashes++;
 
       if (unique_crashes >= KEEP_UNIQUE_CRASH) return keeping;
@@ -4658,6 +4662,7 @@ abort_trimming:
    a helper function for fuzz_one(). */
 
 EXP_ST u8 common_fuzz_stuff(char** argv, u8* out_buf, u32 len) {
+/* [analysis] 此函数用于变异后对文件的执行，以及对crash，hang等文件的保存 */
 
   u8 fault;
 
@@ -5046,7 +5051,7 @@ static u8 fuzz_one(char** argv) {
        The odds of skipping stuff are higher for already-fuzzed inputs and
        lower for never-fuzzed entries. */
 
-	/* [analysis] 117. 非dumb_mode下，即使没有新的favored的case，也有可能跳过一些case
+	/* [analysis] 117. 非dumb_mode下，非favored的case，也有可能被跳过
 					没有fuzz过的case跳过可能性比fuzz过的case跳过可能性低
 	*/
     if (queue_cycle > 1 && !queue_cur->was_fuzzed) {
@@ -6078,7 +6083,7 @@ skip_interest:
         continue;
       }
 
-	  /* [analysis] 134. insert时其实是拼接head+extras+tail，不用还原case，token多时开销大 */
+	  /* [analysis] 134. insert时其实是拼接head+extra+tail，不用还原case，token多时开销大 */
       /* Insert token */
       memcpy(ex_tmp + i, extras[j].data, extras[j].len);
 
@@ -8161,7 +8166,7 @@ int main(int argc, char** argv) {
   /* [analysis] 46. 从in_dir/.state/auto_extras中加载自动产生的字典条目 */
   load_auto();
 
-  /* [analysis] 53. 将输入queue中的文件移至out_dir中 */
+  /* [analysis] 53. 将输入queue中的文件移至out_dir/queue/中 */
   pivot_inputs();
 
   /* [analysis] 57. 加载用户自定义字典，分为file模式和directory模式两种 */
